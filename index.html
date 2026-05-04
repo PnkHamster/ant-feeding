@@ -1,0 +1,358 @@
+import { useState, useEffect } from “react”;
+
+const FOOD_OPTIONS = [“蟋蟀”, “麵包蟲”, “果凍”, “蜂蜜水”, “昆蟲果凍”, “蛋白質飼料”, “其他”];
+
+const STORAGE_KEY = “ant_feeding_records”;
+
+function formatDate(dateStr) {
+const d = new Date(dateStr);
+return d.toLocaleDateString(“zh-TW”, { month: “short”, day: “numeric”, weekday: “short” });
+}
+function formatTime(dateStr) {
+const d = new Date(dateStr);
+return d.toLocaleTimeString(“zh-TW”, { hour: “2-digit”, minute: “2-digit” });
+}
+function getWeekStart() {
+const now = new Date();
+const day = now.getDay();
+const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+const monday = new Date(now.setDate(diff));
+monday.setHours(0, 0, 0, 0);
+return monday;
+}
+
+export default function AntFeedingTracker() {
+const [records, setRecords] = useState([]);
+const [showForm, setShowForm] = useState(false);
+const [food, setFood] = useState(FOOD_OPTIONS[0]);
+const [customFood, setCustomFood] = useState(””);
+const [note, setNote] = useState(””);
+const [feedTime, setFeedTime] = useState(() => new Date().toISOString().slice(0, 16));
+const [saving, setSaving] = useState(false);
+const [deleteId, setDeleteId] = useState(null);
+
+useEffect(() => {
+async function load() {
+try {
+const res = await window.storage.get(STORAGE_KEY);
+if (res && res.value) setRecords(JSON.parse(res.value));
+} catch {}
+}
+load();
+}, []);
+
+async function saveRecords(newRecords) {
+try {
+await window.storage.set(STORAGE_KEY, JSON.stringify(newRecords));
+} catch {}
+setRecords(newRecords);
+}
+
+async function handleAdd() {
+if (saving) return;
+setSaving(true);
+const finalFood = food === “其他” ? (customFood.trim() || “其他”) : food;
+const record = {
+id: Date.now(),
+time: new Date(feedTime).toISOString(),
+food: finalFood,
+note: note.trim(),
+};
+const updated = [record, …records];
+await saveRecords(updated);
+setShowForm(false);
+setNote(””);
+setFood(FOOD_OPTIONS[0]);
+setCustomFood(””);
+setFeedTime(new Date().toISOString().slice(0, 16));
+setSaving(false);
+}
+
+async function handleDelete(id) {
+const updated = records.filter(r => r.id !== id);
+await saveRecords(updated);
+setDeleteId(null);
+}
+
+const weekStart = getWeekStart();
+const weekRecords = records.filter(r => new Date(r.time) >= weekStart);
+
+// Group records by date
+const grouped = {};
+records.forEach(r => {
+const dateKey = new Date(r.time).toDateString();
+if (!grouped[dateKey]) grouped[dateKey] = [];
+grouped[dateKey].push(r);
+});
+const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+return (
+<div style={{
+minHeight: “100vh”,
+background: “#0f0e0b”,
+fontFamily: “‘Noto Serif TC’, ‘Georgia’, serif”,
+color: “#e8e0cc”,
+padding: “0”,
+display: “flex”,
+flexDirection: “column”,
+}}>
+{/* Header */}
+<div style={{
+background: “linear-gradient(135deg, #1a1a0e 0%, #0f0e0b 100%)”,
+borderBottom: “1px solid #3a3520”,
+padding: “28px 24px 20px”,
+position: “sticky”,
+top: 0,
+zIndex: 10,
+}}>
+<div style={{ display: “flex”, alignItems: “flex-start”, justifyContent: “space-between”, maxWidth: 520, margin: “0 auto” }}>
+<div>
+<div style={{ fontSize: 11, letterSpacing: “0.25em”, color: “#8a7d50”, textTransform: “uppercase”, marginBottom: 6 }}>螞蟻飼育日誌</div>
+<div style={{ fontSize: 26, fontWeight: 700, color: “#f0e6c0”, lineHeight: 1.1 }}>🐜 餵食紀錄</div>
+</div>
+<div style={{
+background: “#1e1d10”,
+border: “1px solid #3a3520”,
+borderRadius: 12,
+padding: “10px 16px”,
+textAlign: “center”,
+minWidth: 80,
+}}>
+<div style={{ fontSize: 28, fontWeight: 800, color: “#c8a84b”, lineHeight: 1 }}>{weekRecords.length}</div>
+<div style={{ fontSize: 10, color: “#8a7d50”, marginTop: 4, letterSpacing: “0.1em” }}>本週次數</div>
+</div>
+</div>
+
+```
+    {/* Week bar */}
+    <div style={{ maxWidth: 520, margin: "16px auto 0", display: "flex", gap: 6 }}>
+      {[1,2,3,4,5,6,0].map((dow, i) => {
+        const labels = ["一","二","三","四","五","六","日"];
+        const now = new Date();
+        const todayDow = now.getDay();
+        const diff = dow - todayDow;
+        const d = new Date(now);
+        d.setDate(now.getDate() + diff);
+        d.setHours(0,0,0,0);
+        const isToday = d.toDateString() === new Date().toDateString();
+        const isPast = d <= new Date();
+        const hasFeed = weekRecords.some(r => {
+          const rd = new Date(r.time);
+          rd.setHours(0,0,0,0);
+          return rd.toDateString() === d.toDateString();
+        });
+        return (
+          <div key={i} style={{
+            flex: 1,
+            textAlign: "center",
+            padding: "6px 2px",
+            borderRadius: 8,
+            background: isToday ? "#2a2510" : "transparent",
+            border: isToday ? "1px solid #c8a84b" : "1px solid transparent",
+          }}>
+            <div style={{ fontSize: 10, color: isToday ? "#c8a84b" : "#6a6040", marginBottom: 4 }}>{labels[i]}</div>
+            <div style={{
+              width: 10, height: 10, borderRadius: "50%",
+              background: hasFeed ? "#c8a84b" : (isPast ? "#2a2820" : "#1a1a10"),
+              margin: "0 auto",
+              border: hasFeed ? "none" : "1px solid #3a3520",
+            }} />
+          </div>
+        );
+      })}
+    </div>
+  </div>
+
+  {/* Body */}
+  <div style={{ flex: 1, padding: "20px 24px 100px", maxWidth: 520, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+
+    {/* Form */}
+    {showForm && (
+      <div style={{
+        background: "#1a1910",
+        border: "1px solid #3a3520",
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 20,
+        animation: "fadeIn 0.2s ease",
+      }}>
+        <div style={{ fontSize: 13, color: "#8a7d50", marginBottom: 14, letterSpacing: "0.08em" }}>新增餵食紀錄</div>
+
+        <label style={{ display: "block", fontSize: 11, color: "#6a6040", marginBottom: 6, letterSpacing: "0.1em" }}>餵食時間</label>
+        <input
+          type="datetime-local"
+          value={feedTime}
+          onChange={e => setFeedTime(e.target.value)}
+          style={{
+            width: "100%", boxSizing: "border-box",
+            background: "#0f0e0b", border: "1px solid #3a3520",
+            borderRadius: 8, color: "#e8e0cc",
+            padding: "8px 12px", fontSize: 14, marginBottom: 14,
+            outline: "none",
+          }}
+        />
+
+        <label style={{ display: "block", fontSize: 11, color: "#6a6040", marginBottom: 6, letterSpacing: "0.1em" }}>食物種類</label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+          {FOOD_OPTIONS.map(f => (
+            <button key={f} onClick={() => setFood(f)} style={{
+              padding: "6px 14px", borderRadius: 20, fontSize: 13,
+              border: food === f ? "1px solid #c8a84b" : "1px solid #3a3520",
+              background: food === f ? "#2a2510" : "#0f0e0b",
+              color: food === f ? "#c8a84b" : "#8a7d50",
+              cursor: "pointer", transition: "all 0.15s",
+            }}>{f}</button>
+          ))}
+        </div>
+        {food === "其他" && (
+          <input
+            placeholder="請輸入食物名稱..."
+            value={customFood}
+            onChange={e => setCustomFood(e.target.value)}
+            style={{
+              width: "100%", boxSizing: "border-box",
+              background: "#0f0e0b", border: "1px solid #3a3520",
+              borderRadius: 8, color: "#e8e0cc",
+              padding: "8px 12px", fontSize: 14, marginBottom: 14, outline: "none",
+            }}
+          />
+        )}
+
+        <label style={{ display: "block", fontSize: 11, color: "#6a6040", marginBottom: 6, letterSpacing: "0.1em" }}>備註 / 觀察</label>
+        <textarea
+          placeholder="例如：工蟻反應積極、蟻后出現..."
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          rows={3}
+          style={{
+            width: "100%", boxSizing: "border-box",
+            background: "#0f0e0b", border: "1px solid #3a3520",
+            borderRadius: 8, color: "#e8e0cc",
+            padding: "8px 12px", fontSize: 14, marginBottom: 16,
+            outline: "none", resize: "none", fontFamily: "inherit",
+          }}
+        />
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => setShowForm(false)} style={{
+            flex: 1, padding: "10px", borderRadius: 10,
+            border: "1px solid #3a3520", background: "transparent",
+            color: "#6a6040", cursor: "pointer", fontSize: 14,
+          }}>取消</button>
+          <button onClick={handleAdd} disabled={saving} style={{
+            flex: 2, padding: "10px", borderRadius: 10,
+            border: "none", background: "#c8a84b",
+            color: "#0f0e0b", cursor: "pointer", fontSize: 14,
+            fontWeight: 700, opacity: saving ? 0.7 : 1,
+          }}>{saving ? "儲存中..." : "儲存紀錄"}</button>
+        </div>
+      </div>
+    )}
+
+    {/* Records */}
+    {sortedDates.length === 0 && !showForm && (
+      <div style={{ textAlign: "center", padding: "60px 0", color: "#4a4530" }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🐜</div>
+        <div style={{ fontSize: 15 }}>還沒有紀錄</div>
+        <div style={{ fontSize: 12, marginTop: 8 }}>點擊下方按鈕開始記錄</div>
+      </div>
+    )}
+
+    {sortedDates.map(dateKey => (
+      <div key={dateKey} style={{ marginBottom: 24 }}>
+        <div style={{
+          fontSize: 11, color: "#8a7d50", letterSpacing: "0.15em",
+          marginBottom: 10, paddingBottom: 8,
+          borderBottom: "1px solid #2a2510",
+        }}>
+          {formatDate(new Date(dateKey).toISOString())}
+          <span style={{ marginLeft: 8, color: "#4a4530" }}>({grouped[dateKey].length} 次)</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {grouped[dateKey].map(r => (
+            <div key={r.id} style={{
+              background: "#1a1910",
+              border: "1px solid #2a2510",
+              borderRadius: 12,
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 12,
+              position: "relative",
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "#2a2510", display: "flex",
+                alignItems: "center", justifyContent: "center",
+                fontSize: 18, flexShrink: 0,
+              }}>🍽️</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: "#f0e6c0" }}>{r.food}</span>
+                  <span style={{ fontSize: 11, color: "#6a6040" }}>{formatTime(r.time)}</span>
+                </div>
+                {r.note && (
+                  <div style={{ fontSize: 12, color: "#8a7d50", lineHeight: 1.5 }}>{r.note}</div>
+                )}
+              </div>
+              {deleteId === r.id ? (
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => setDeleteId(null)} style={{
+                    padding: "4px 8px", borderRadius: 6, fontSize: 11,
+                    border: "1px solid #3a3520", background: "transparent",
+                    color: "#6a6040", cursor: "pointer",
+                  }}>取消</button>
+                  <button onClick={() => handleDelete(r.id)} style={{
+                    padding: "4px 8px", borderRadius: 6, fontSize: 11,
+                    border: "none", background: "#8b2e2e",
+                    color: "#f0e6c0", cursor: "pointer",
+                  }}>確認</button>
+                </div>
+              ) : (
+                <button onClick={() => setDeleteId(r.id)} style={{
+                  background: "transparent", border: "none",
+                  color: "#4a4530", cursor: "pointer", fontSize: 16,
+                  padding: "2px 6px", lineHeight: 1,
+                }}>×</button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* FAB */}
+  {!showForm && (
+    <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 20 }}>
+      <button onClick={() => { setShowForm(true); setFeedTime(new Date().toISOString().slice(0,16)); }} style={{
+        background: "#c8a84b",
+        color: "#0f0e0b",
+        border: "none",
+        borderRadius: 50,
+        padding: "14px 32px",
+        fontSize: 15,
+        fontWeight: 700,
+        cursor: "pointer",
+        boxShadow: "0 4px 24px rgba(200,168,75,0.35)",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        fontFamily: "inherit",
+      }}>
+        <span style={{ fontSize: 18 }}>+</span> 記錄餵食
+      </button>
+    </div>
+  )}
+
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap');
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
+    * { -webkit-tap-highlight-color: transparent; }
+  `}</style>
+</div>
+```
+
+);
+}
