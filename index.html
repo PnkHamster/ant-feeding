@@ -262,7 +262,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert
   font-family: inherit; font-size: 14px; font-weight: 700;
   transition: opacity 0.15s;
 }
-.btn-save:active { opacity: 0.8; }
+.btn-save:active { opacity: 0.9; }
 
 /* FAB */
 .fab {
@@ -277,70 +277,84 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert
   padding: 15px 34px;
   font-size: 15px; font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 28px rgba(200,168,75,0.4);
+  box-shadow: 0 3px 5px rgba(0,0,0,0.3), 0 6px 20px rgba(200,168,75,0.35);
   display: flex; align-items: center; gap: 8px;
   font-family: inherit;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: box-shadow 0.28s cubic-bezier(0.4,0,0.2,1), transform 0.18s cubic-bezier(0.4,0,0.2,1);
+  position: relative; overflow: hidden;
 }
 .fab button:active {
-  transform: scale(0.96);
-  box-shadow: 0 2px 14px rgba(200,168,75,0.3);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35), 0 10px 28px rgba(200,168,75,0.4);
+  transform: translateY(-2px);
 }
 
-/* iOS Spring Animations */
-@keyframes springPop {
-  0%   { transform: scale(1); }
-  30%  { transform: scale(0.91); }
-  60%  { transform: scale(1.06); }
-  80%  { transform: scale(0.97); }
-  100% { transform: scale(1); }
+/* Material Ripple */
+.ripple-wrap {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
 }
-@keyframes springPopSmall {
-  0%   { transform: scale(1); }
-  30%  { transform: scale(0.88); }
-  60%  { transform: scale(1.08); }
-  80%  { transform: scale(0.96); }
-  100% { transform: scale(1); }
+.ripple-wrap::after {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 100%; height: 100%;
+  top: 0; left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.25) 10%, transparent 10%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10); opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.8s cubic-bezier(0.4,0,0.2,1);
 }
-@keyframes formSlideIn {
-  0%   { opacity: 0; transform: translateY(18px) scale(0.97); }
-  60%  { opacity: 1; transform: translateY(-4px) scale(1.01); }
-  80%  { transform: translateY(2px) scale(0.995); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+.ripple-wrap:active::after {
+  transform: scale(0); opacity: 0.3;
+  transition: 0s;
 }
-@keyframes cardSlideIn {
-  0%   { opacity: 0; transform: translateY(-10px) scale(0.96); }
-  60%  { opacity: 1; transform: translateY(3px) scale(1.01); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+.ripple-dark::after {
+  background-image: radial-gradient(circle, rgba(0,0,0,0.18) 10%, transparent 10%);
 }
-.spring-btn {
-  transition: transform 0.08s ease;
+
+/* Material elevation on cards */
+.record-card {
+  transition: box-shadow 0.28s cubic-bezier(0.4,0,0.2,1);
 }
-.spring-btn:active {
-  transform: scale(0.91) !important;
+.record-card:active {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
-.spring-btn.popping {
-  animation: springPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+
+/* Form slide up - Material style */
+@keyframes materialSlideUp {
+  0%   { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
-.spring-fab:active {
-  transform: scale(0.91) !important;
-}
-.spring-fab.popping {
-  animation: springPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+@keyframes materialFadeIn {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 .form-panel {
-  animation: formSlideIn 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+  animation: materialSlideUp 0.35s cubic-bezier(0.4,0,0.2,1) forwards;
 }
 .record-card {
-  animation: cardSlideIn 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+  animation: materialFadeIn 0.25s cubic-bezier(0.4,0,0.2,1) forwards;
 }
+
+/* Material button press */
+.mat-btn {
+  transition: background 0.2s cubic-bezier(0.4,0,0.2,1),
+              box-shadow 0.2s cubic-bezier(0.4,0,0.2,1),
+              transform 0.15s cubic-bezier(0.4,0,0.2,1);
+}
+.mat-btn:active {
+  transform: scale(0.96);
+}
+
+/* Food chip transition */
 .food-chip {
-  transition: transform 0.08s ease, border-color 0.15s, background 0.15s, color 0.15s;
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  position: relative; overflow: hidden;
 }
-.food-chip:active { transform: scale(0.88); }
-.food-chip.popping {
-  animation: springPopSmall 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
+.food-chip:active { transform: scale(0.94); }
 ```
 
   </style>
@@ -367,7 +381,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert
 </div>
 
 <div class="fab" id="fab">
-  <button class="spring-fab" onclick="springClick(this, openForm)">＋ 記錄餵食</button>
+  <button class="ripple-dark" onclick="openForm()">＋ 記錄餵食</button>
 </div>
 
 <script>
@@ -479,9 +493,9 @@ function renderRecords() {
         </div>
         <div class="record-actions">
           ${isDeleting
-            ? `<button class="btn-cancel spring-btn" onclick="springClick(this, cancelDelete, 120)">取消</button>
-               <button class="btn-confirm spring-btn" onclick="springClick(this, ()=>confirmDelete(${r.id}), 120)">確認</button>`
-            : `<button class="btn-delete spring-btn" onclick="springClick(this, ()=>askDelete(${r.id}), 120)">×</button>`
+            ? `<button class="btn-cancel mat-btn ripple-wrap" onclick="cancelDelete()">取消</button>
+               <button class="btn-confirm mat-btn ripple-wrap" onclick="confirmDelete(${r.id})">確認</button>`
+            : `<button class="btn-delete mat-btn ripple-wrap" onclick="askDelete(${r.id})">×</button>`
           }
         </div>
       </div>`;
@@ -510,7 +524,7 @@ function openForm() {
 
 function buildForm() {
   const chips = FOOD_OPTIONS.map(f =>
-    `<button class="food-chip ${f === selectedFood ? 'active' : ''}" onclick="springClick(this, ()=>selectFood('${f}'), 120)">${f}</button>`
+    `<button class="food-chip ripple-wrap ${f === selectedFood ? 'active' : ''}" onclick="selectFood('${f}')">${f}</button>`
   ).join("");
 
   return `<div class="form-panel">
@@ -531,8 +545,8 @@ function buildForm() {
 
 ```
 <div class="form-buttons">
-  <button class="btn-cancel-form spring-btn" onclick="springClick(this, closeForm)">取消</button>
-  <button class="btn-save spring-btn" onclick="springClick(this, addRecord)">儲存紀錄</button>
+  <button class="btn-cancel-form mat-btn ripple-wrap" onclick="closeForm()">取消</button>
+  <button class="btn-save mat-btn ripple-wrap ripple-dark" onclick="addRecord()">儲存紀錄</button>
 </div>
 ```
 
@@ -587,14 +601,6 @@ records = records.filter(r => r.id !== id);
 save();
 pendingDelete = null;
 render();
-}
-
-// Spring click helper
-function springClick(el, callback, delay = 180) {
-el.classList.remove(‘popping’);
-void el.offsetWidth; // reflow
-el.classList.add(‘popping’);
-setTimeout(() => callback(), delay);
 }
 
 // init
